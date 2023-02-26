@@ -11,13 +11,10 @@ func init() {
 
 func main() {
 	bc := NewBlockchain()
-	fmt.Println(bc.toString())
 
-	bc.AddBlock(1, []byte("Second Block"))
+	bc.AddBlock(0, bc.GetLastBlock().Hash())
 
-	fmt.Println(bc.toString())
-
-	bc.AddBlock(2, []byte("Third Block"))
+	bc.AddBlock(1, bc.GetLastBlock().Hash())
 
 	fmt.Println(bc.toString())
 }
