@@ -1,4 +1,4 @@
-package main
+package blockchain
 
 import (
 	"crypto/sha256"
@@ -25,6 +25,7 @@ func NewBlock(nonce int, prevHash [32]byte) *Block {
 	}
 }
 
+// Hash() returns the hash of the block.
 func (b *Block) Hash() [32]byte {
 	// marshall the block to json
 	res, err := json.Marshal(b)
@@ -35,6 +36,7 @@ func (b *Block) Hash() [32]byte {
 	return sha256.Sum256(res)
 }
 
+// MarshalJSON() returns a json representation of the block.
 func (b *Block) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		PrevHash     [32]byte `json:"prevHash"`
@@ -50,45 +52,9 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 }
 
 // ToString() returns a developer-friendly string representation of the block.
-func (b *Block) toString() string {
+func (b *Block) ToString() string {
 	return fmt.Sprintf(
 		"Prev. hash: %x, Timestamp: %d, Transactions: %s, Nonce: %d",
 		b.prevHash, b.timestamp, b.transactions, b.nonce,
 	)
-}
-
-// Blockchain is a struct for the blockchain.
-type Blockchain struct {
-	chain []*Block
-}
-
-// NewBlockchain() returns a pointer to a new blockchain
-func NewBlockchain() *Blockchain {
-	b := new(Block)
-	bc := new(Blockchain)
-	bc.AddBlock(0, b.Hash())
-	return bc
-}
-
-// AddBlock() takes a nonce and a previous hash and adds a new block to the blockchain.
-func (bc *Blockchain) AddBlock(nonce int, prevHash [32]byte) *Block {
-	block := NewBlock(nonce, prevHash)
-	bc.chain = append(bc.chain, block)
-	return block
-}
-
-func (bc *Blockchain) GetLastBlock() *Block {
-	return bc.chain[len(bc.chain)-1]
-}
-
-// ToString() returns a developer-friendly string representation of the blockchain.
-func (bc *Blockchain) toString() string {
-	var res string
-	for i, block := range bc.chain {
-		res += fmt.Sprintf("Block %d: %s", i, block.toString())
-		if i < len(bc.chain)-1 {
-			res += " | "
-		}
-	}
-	return res
 }

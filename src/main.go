@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+
+	"github.com/Rha02/block-beard/src/blockchain"
 )
 
 func init() {
@@ -10,11 +12,11 @@ func init() {
 }
 
 func main() {
-	bc := NewBlockchain()
+	bc := blockchain.NewBlockchain()
 
 	bc.AddBlock(0, bc.GetLastBlock().Hash())
 
 	bc.AddBlock(1, bc.GetLastBlock().Hash())
 
-	fmt.Println(bc.toString())
+	fmt.Println(bc.ToString())
 }
