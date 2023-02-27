@@ -6,6 +6,7 @@ import (
 
 // Blockchain is a struct for the blockchain.
 type Blockchain struct {
+	pool  []*Transaction
 	chain []*Block
 }
 
@@ -19,9 +20,16 @@ func NewBlockchain() *Blockchain {
 
 // AddBlock() takes a nonce and a previous hash and adds a new block to the blockchain.
 func (bc *Blockchain) AddBlock(nonce int, prevHash [32]byte) *Block {
-	block := NewBlock(nonce, prevHash)
+	block := NewBlock(nonce, prevHash, bc.pool)
+	bc.pool = []*Transaction{}
 	bc.chain = append(bc.chain, block)
 	return block
+}
+
+// AddTransaction() creates a transaction and adds it to the pool.
+func (bc *Blockchain) AddTransaction(sender, recipient string, amount float32) {
+	t := NewTransaction(sender, recipient, amount)
+	bc.pool = append(bc.pool, t)
 }
 
 // GetLastBlock() returns a pointer to the last block in the blockchain.

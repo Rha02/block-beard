@@ -13,6 +13,7 @@ func init() {
 
 func main() {
 	bc := blockchain.NewBlockchain()
+	bc.AddTransaction("Bruce Wayne", "Clark Kent", 100)
 
 	bc.AddBlock(0, bc.GetLastBlock().Hash())
 
