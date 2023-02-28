@@ -2,7 +2,10 @@ package blockchain
 
 import (
 	"fmt"
+	"strings"
 )
+
+var MiningDifficulty = 2
 
 // Blockchain is a struct for the blockchain.
 type Blockchain struct {
@@ -35,6 +38,41 @@ func (bc *Blockchain) AddTransaction(sender, recipient string, amount float32) {
 // GetLastBlock() returns a pointer to the last block in the blockchain.
 func (bc *Blockchain) GetLastBlock() *Block {
 	return bc.chain[len(bc.chain)-1]
+}
+
+// CopyPool() returns a copy of the transaction pool.
+func (bc *Blockchain) CopyPool() []*Transaction {
+	var res []*Transaction
+	for _, t := range bc.pool {
+		res = append(res, NewTransaction(
+			t.senderAddress,
+			t.recipientAddress,
+			t.amount,
+		))
+	}
+	return res
+}
+
+// ValidateProof() takes a nonce, a previous hash, a list of transactions, and a difficulty and returns whether the proof is valid.
+func (bc *Blockchain) ValidateProof(nonce int, prevHash [32]byte, transactions []*Transaction, difficulty int) bool {
+	zeroes := strings.Repeat("0", difficulty)
+	b := Block{
+		prevHash:     prevHash,
+		timestamp:    0,
+		transactions: transactions,
+		nonce:        nonce,
+	}
+	hashStr := fmt.Sprintf("%x", b.Hash())
+	return hashStr[:difficulty] == zeroes
+}
+
+// ProofOfWork() returns a valid nonce for the current pool of transactions.
+func (bc *Blockchain) ProofOfWork() int {
+	nonce := 0
+	for !bc.ValidateProof(nonce, bc.GetLastBlock().Hash(), bc.CopyPool(), MiningDifficulty) {
+		nonce++
+	}
+	return nonce
 }
 
 // ToString() returns a developer-friendly string representation of the blockchain.
