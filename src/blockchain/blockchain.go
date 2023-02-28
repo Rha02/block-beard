@@ -5,19 +5,25 @@ import (
 	"strings"
 )
 
-var MiningDifficulty = 2
+const (
+	MiningDifficulty = 2
+	MINING_SENDER    = "BlockBeard"
+	MINING_REWARD    = 1.0
+)
 
 // Blockchain is a struct for the blockchain.
 type Blockchain struct {
-	pool  []*Transaction
-	chain []*Block
+	pool    []*Transaction
+	chain   []*Block
+	address string
 }
 
 // NewBlockchain() returns a pointer to a new blockchain
-func NewBlockchain() *Blockchain {
+func NewBlockchain(bcAddress string) *Blockchain {
 	b := new(Block)
 	bc := new(Blockchain)
 	bc.AddBlock(0, b.Hash())
+	bc.address = bcAddress
 	return bc
 }
 
@@ -73,6 +79,30 @@ func (bc *Blockchain) ProofOfWork() int {
 		nonce++
 	}
 	return nonce
+}
+
+// Mine() mines a new block.
+func (bc *Blockchain) Mine() {
+	nonce := bc.ProofOfWork()
+	bc.AddTransaction(MINING_SENDER, bc.address, MINING_REWARD)
+	bc.AddBlock(nonce, bc.GetLastBlock().Hash())
+	fmt.Println("Mined a new block successfully!")
+}
+
+// GetBalance() returns the balance of a given address.
+func (bc *Blockchain) GetBalance(address string) float32 {
+	var balance float32
+	for _, block := range bc.chain {
+		for _, transaction := range block.transactions {
+			if transaction.senderAddress == address {
+				balance -= transaction.amount
+			}
+			if transaction.recipientAddress == address {
+				balance += transaction.amount
+			}
+		}
+	}
+	return balance
 }
 
 // ToString() returns a developer-friendly string representation of the blockchain.
