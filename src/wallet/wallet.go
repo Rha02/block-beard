@@ -19,10 +19,9 @@ type Wallet struct {
 }
 
 // NewWallet() returns a pointer to a new wallet.
-func NewWallet(address string) *Wallet {
+func NewWallet() *Wallet {
 	// Create a new wallet
 	w := new(Wallet)
-	w.address = address
 
 	// Generate a new private key
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -77,7 +76,7 @@ func (w *Wallet) GetPrivateKey() *ecdsa.PrivateKey {
 	return w.privateKey
 }
 
-// GetPrivateKeyStr() returns the string representation of the wallet's private key.
+// GetPrivateKeyStr() returns the private key of the wallet as a string.
 func (w *Wallet) GetPrivateKeyStr() string {
 	return fmt.Sprintf("%x", w.privateKey.D.Bytes())
 }
@@ -87,7 +86,7 @@ func (w *Wallet) GetPublicKey() *ecdsa.PublicKey {
 	return w.publicKey
 }
 
-// GetPublicKeyStr() returns the string representation of the wallet's public key.
+// GetPublicKeyStr() returns the public key of the wallet as a string.
 func (w *Wallet) GetPublicKeyStr() string {
 	return fmt.Sprintf("%x%x", w.publicKey.X.Bytes(), w.publicKey.Y.Bytes())
 }

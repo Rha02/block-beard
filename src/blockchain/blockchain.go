@@ -1,8 +1,13 @@
 package blockchain
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/Rha02/block-beard/src/utils"
 )
 
 const (
@@ -36,9 +41,34 @@ func (bc *Blockchain) AddBlock(nonce int, prevHash [32]byte) *Block {
 }
 
 // AddTransaction() creates a transaction and adds it to the pool.
-func (bc *Blockchain) AddTransaction(sender, recipient string, amount float32) {
+func (bc *Blockchain) AddTransaction(
+	sender, recipient string, amount float32, senderPublicKey *ecdsa.PublicKey, signature *utils.Signature,
+) bool {
 	t := NewTransaction(sender, recipient, amount)
+
+	if sender != MINING_SENDER && !bc.VerifyTransaction(senderPublicKey, signature, t) {
+		fmt.Printf("Invalid transaction from %s", sender)
+		return false
+	}
+
+	if bc.GetBalance(sender) < amount {
+		fmt.Printf("Not enough funds to send %f from %s to %s\n", amount, sender, recipient)
+		return false
+	}
 	bc.pool = append(bc.pool, t)
+	return true
+}
+
+// VerifyTransaction() takes a public key, a signature, and a transaction and returns whether the transaction is valid.
+func (bc *Blockchain) VerifyTransaction(
+	senderPublicKey *ecdsa.PublicKey, s *utils.Signature, t *Transaction,
+) bool {
+	m, err := json.Marshal(t)
+	if err != nil {
+		panic(err)
+	}
+	h := sha256.Sum256(m)
+	return ecdsa.Verify(senderPublicKey, h[:], s.R, s.S)
 }
 
 // GetLastBlock() returns a pointer to the last block in the blockchain.
@@ -84,7 +114,7 @@ func (bc *Blockchain) ProofOfWork() int {
 // Mine() mines a new block.
 func (bc *Blockchain) Mine() {
 	nonce := bc.ProofOfWork()
-	bc.AddTransaction(MINING_SENDER, bc.address, MINING_REWARD)
+	bc.AddTransaction(MINING_SENDER, bc.address, MINING_REWARD, nil, nil)
 	bc.AddBlock(nonce, bc.GetLastBlock().Hash())
 	fmt.Println("Mined a new block successfully!")
 }

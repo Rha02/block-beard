@@ -32,8 +32,8 @@ func (t *Transaction) ToString() string {
 // MarshalJSON() returns a json representation of the transaction.
 func (t *Transaction) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		SenderAddress    string  `json:"senderAddress"`
-		RecipientAddress string  `json:"recipientAddress"`
+		SenderAddress    string  `json:"sender_address"`
+		RecipientAddress string  `json:"recipient_address"`
 		Amount           float32 `json:"amount"`
 	}{
 		SenderAddress:    t.senderAddress,
