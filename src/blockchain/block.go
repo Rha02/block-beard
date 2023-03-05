@@ -40,12 +40,12 @@ func (b *Block) Hash() [32]byte {
 // MarshalJSON() returns a json representation of the block.
 func (b *Block) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		PrevHash     [32]byte       `json:"prevHash"`
+		PrevHash     string         `json:"prevHash"`
 		Timestamp    int64          `json:"timestamp"`
 		Transactions []*Transaction `json:"transactions"`
 		Nonce        int            `json:"nonce"`
 	}{
-		PrevHash:     b.prevHash,
+		PrevHash:     fmt.Sprintf("%x", b.prevHash),
 		Timestamp:    b.timestamp,
 		Transactions: b.transactions,
 		Nonce:        b.nonce,

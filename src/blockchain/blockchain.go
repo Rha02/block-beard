@@ -21,15 +21,30 @@ type Blockchain struct {
 	pool    []*Transaction
 	chain   []*Block
 	address string
+	port    uint16
 }
 
 // NewBlockchain() returns a pointer to a new blockchain
-func NewBlockchain(bcAddress string) *Blockchain {
+func NewBlockchain(bcAddress string, port uint16) *Blockchain {
 	b := new(Block)
 	bc := new(Blockchain)
 	bc.AddBlock(0, b.Hash())
 	bc.address = bcAddress
 	return bc
+}
+
+func (bc *Blockchain) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Chain   []*Block
+		Pool    []*Transaction
+		Address string
+		Port    uint16
+	}{
+		Chain:   bc.chain,
+		Pool:    bc.pool,
+		Address: bc.address,
+		Port:    bc.port,
+	})
 }
 
 // AddBlock() takes a nonce and a previous hash and adds a new block to the blockchain.
