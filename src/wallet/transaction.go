@@ -60,3 +60,15 @@ func (t *Transaction) GenerateSignature() *utils.Signature {
 
 	return &utils.Signature{R: r, S: s}
 }
+
+type TransactionRequest struct {
+	SenderPrivateKey *string `json:"sender_private_key"`
+	SenderPublicKey  *string `json:"sender_public_key"`
+	SenderAddress    *string `json:"sender_address"`
+	RecipientAddress *string `json:"recipient_address"`
+	Amount           *string `json:"amount"`
+}
+
+func (t *TransactionRequest) IsValid() bool {
+	return t.SenderPrivateKey != nil && t.SenderPublicKey != nil && t.SenderAddress != nil && t.RecipientAddress != nil && t.Amount != nil
+}

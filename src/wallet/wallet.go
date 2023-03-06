@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -64,6 +65,19 @@ func NewWallet() *Wallet {
 	w.address = base58.Encode(digest6)
 
 	return w
+}
+
+// MarshalJSON() returns the JSON representation of the wallet.
+func (w *Wallet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		PrivateKey string `json:"private_key"`
+		PublicKey  string `json:"public_key"`
+		Address    string `json:"address"`
+	}{
+		PrivateKey: w.GetPrivateKeyStr(),
+		PublicKey:  w.GetPublicKeyStr(),
+		Address:    w.GetAddress(),
+	})
 }
 
 // GetAddress() returns the address of the wallet.
