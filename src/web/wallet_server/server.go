@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"path"
+	"strconv"
 	"text/template"
 
+	"github.com/Rha02/block-beard/src/blockchain"
 	"github.com/Rha02/block-beard/src/utils"
 	"github.com/Rha02/block-beard/src/wallet"
 )
@@ -75,6 +78,49 @@ func (s *Server) PostTransactionHandler(rw http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	publicKey := utils.PublicKeyFromString(*t.SenderPublicKey)
+	privateKey := utils.PrivateKeyFromString(*t.SenderPrivateKey, publicKey)
+	amount, err := strconv.ParseFloat(*t.Amount, 32)
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write(utils.JsonStatus("Invalid transaction: invalid amount"))
+		println("Error: invalid amount")
+		return
+	}
+	amount32 := float32(amount)
+
+	rw.Header().Add("Content-Type", "application/json")
+
+	transaction := wallet.NewTransaction(privateKey, publicKey, *t.SenderAddress, *t.RecipientAddress, amount32)
+	signature := transaction.GenerateSignature()
+	signatureStr := signature.ToString()
+
+	tr := blockchain.TransactionRequest{
+		SenderPublicKey:  t.SenderPublicKey,
+		SenderAddress:    t.SenderAddress,
+		RecipientAddress: t.RecipientAddress,
+		Amount:           &amount32,
+		Signature:        &signatureStr,
+	}
+
+	m, _ := json.Marshal(tr)
+	buf := bytes.NewBuffer(m)
+
+	res, err := http.Post(s.Gateway()+"/transaction", "application/json", buf)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write(utils.JsonStatus("Error posting transaction to blockchain"))
+		println("Error posting transaction to blockchain")
+		return
+	}
+	if res.StatusCode == http.StatusCreated {
+		rw.WriteHeader(http.StatusCreated)
+		rw.Write(utils.JsonStatus("Transaction posted to blockchain"))
+		println("Transaction posted to blockchain")
+		return
+	}
+	println("Error posting transaction to blockchain: " + res.Status)
+	rw.WriteHeader(http.StatusInternalServerError)
 }
 
 func (s *Server) Start() {

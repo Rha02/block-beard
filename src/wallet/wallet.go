@@ -102,5 +102,5 @@ func (w *Wallet) GetPublicKey() *ecdsa.PublicKey {
 
 // GetPublicKeyStr() returns the public key of the wallet as a string.
 func (w *Wallet) GetPublicKeyStr() string {
-	return fmt.Sprintf("%x%x", w.publicKey.X.Bytes(), w.publicKey.Y.Bytes())
+	return fmt.Sprintf("%064x%064x", w.publicKey.X.Bytes(), w.publicKey.Y.Bytes())
 }

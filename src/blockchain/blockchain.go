@@ -47,12 +47,23 @@ func (bc *Blockchain) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func (bc *Blockchain) GetTransactions() []*Transaction {
+	return bc.pool
+}
+
 // AddBlock() takes a nonce and a previous hash and adds a new block to the blockchain.
 func (bc *Blockchain) AddBlock(nonce int, prevHash [32]byte) *Block {
 	block := NewBlock(nonce, prevHash, bc.pool)
 	bc.pool = []*Transaction{}
 	bc.chain = append(bc.chain, block)
 	return block
+}
+
+func (bc *Blockchain) CreateTransaction(
+	sender, recipient string, amount float32, senderPublicKey *ecdsa.PublicKey, signature *utils.Signature,
+) bool {
+	isTransacted := bc.AddTransaction(sender, recipient, amount, senderPublicKey, signature)
+	return isTransacted
 }
 
 // AddTransaction() creates a transaction and adds it to the pool.
@@ -66,10 +77,10 @@ func (bc *Blockchain) AddTransaction(
 		return false
 	}
 
-	if bc.GetBalance(sender) < amount {
-		fmt.Printf("Not enough funds to send %f from %s to %s\n", amount, sender, recipient)
-		return false
-	}
+	// if bc.GetBalance(sender) < amount {
+	// 	fmt.Printf("Not enough funds to send %f from %s to %s\n", amount, sender, recipient)
+	// 	return false
+	// }
 	bc.pool = append(bc.pool, t)
 	return true
 }
