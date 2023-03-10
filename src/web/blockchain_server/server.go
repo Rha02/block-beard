@@ -29,6 +29,7 @@ func (s *Server) Start() {
 	http.HandleFunc("/transactions", s.TransactionsHandler)
 	http.HandleFunc("/mine", s.MineHandler)
 	http.HandleFunc("/mine/start", s.StartMineHandler)
+	http.HandleFunc("/amount", s.AmountHandler)
 	http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
 
@@ -131,4 +132,23 @@ func (s *Server) StartMineHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(utils.JsonStatus("Mining successful"))
+}
+
+func (s *Server) AmountHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	bcAddress := r.URL.Query().Get("blockchain_address")
+
+	bc := s.GetBlockchain()
+	amount := bc.GetBalance(bcAddress)
+
+	ar := &blockchain.AmountResponse{Amount: amount}
+	m, _ := ar.MarshalJSON()
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(m)
 }

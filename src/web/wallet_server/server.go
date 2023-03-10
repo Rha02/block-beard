@@ -123,9 +123,53 @@ func (s *Server) PostTransactionHandler(rw http.ResponseWriter, r *http.Request)
 	rw.WriteHeader(http.StatusInternalServerError)
 }
 
+func (s *Server) WalletAmountHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	bcAddress := r.URL.Query().Get("blockchain_address")
+	endpoint := fmt.Sprintf("%s/amount?blockchain_address=%s", s.Gateway(), bcAddress)
+
+	res, err := http.Get(endpoint)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(utils.JsonStatus("Error getting amount from blockchain"))
+		return
+	}
+
+	if res.StatusCode == http.StatusOK {
+		decoder := json.NewDecoder(res.Body)
+		var amount blockchain.AmountResponse
+		err := decoder.Decode(&amount)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(utils.JsonStatus("Error decoding amount from blockchain"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		m, _ := json.Marshal(struct {
+			Message string  `json:"message"`
+			Amount  float32 `json:"amount"`
+		}{
+			Message: "Amount retrieved from blockchain",
+			Amount:  amount.Amount,
+		})
+		w.Write(m)
+
+		return
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write(utils.JsonStatus("Error getting amount from blockchain"))
+}
+
 func (s *Server) Start() {
 	http.HandleFunc("/", s.Index)
 	http.HandleFunc("/wallet", s.Wallet)
+	http.HandleFunc("/wallet/amount", s.WalletAmountHandler)
 	http.HandleFunc("/transaction", s.PostTransactionHandler)
 	http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
