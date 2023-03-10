@@ -26,7 +26,9 @@ func (s *Server) Port() uint16 {
 
 func (s *Server) Start() {
 	http.HandleFunc("/", s.GetChainHandler)
-	http.HandleFunc("/transaction", s.TransactionsHandler)
+	http.HandleFunc("/transactions", s.TransactionsHandler)
+	http.HandleFunc("/mine", s.MineHandler)
+	http.HandleFunc("/mine/start", s.StartMineHandler)
 	http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
 
@@ -97,4 +99,36 @@ func (s *Server) TransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+func (s *Server) MineHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	bc := s.GetBlockchain()
+	if !bc.Mine() {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(utils.JsonStatus("Mining failed"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(utils.JsonStatus("Mining successful"))
+}
+
+func (s *Server) StartMineHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	bc := s.GetBlockchain()
+	bc.StartMining()
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(utils.JsonStatus("Mining successful"))
 }

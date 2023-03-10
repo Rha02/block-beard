@@ -106,7 +106,7 @@ func (s *Server) PostTransactionHandler(rw http.ResponseWriter, r *http.Request)
 	m, _ := json.Marshal(tr)
 	buf := bytes.NewBuffer(m)
 
-	res, err := http.Post(s.Gateway()+"/transaction", "application/json", buf)
+	res, err := http.Post(s.Gateway()+"/transactions", "application/json", buf)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		rw.Write(utils.JsonStatus("Error posting transaction to blockchain"))

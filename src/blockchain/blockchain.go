@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/Rha02/block-beard/src/utils"
 )
 
 const (
-	MiningDifficulty = 2
+	MiningDifficulty = 3
 	MINING_SENDER    = "BlockBeard"
 	MINING_REWARD    = 1.0
+	MINING_TIME_SEC  = 15
 )
 
 // Blockchain is a struct for the blockchain.
@@ -22,6 +25,7 @@ type Blockchain struct {
 	chain   []*Block
 	address string
 	port    uint16
+	mux     sync.Mutex
 }
 
 // NewBlockchain() returns a pointer to a new blockchain
@@ -138,11 +142,26 @@ func (bc *Blockchain) ProofOfWork() int {
 }
 
 // Mine() mines a new block.
-func (bc *Blockchain) Mine() {
+func (bc *Blockchain) Mine() bool {
+	bc.mux.Lock()
+	defer bc.mux.Unlock()
+
+	if len(bc.pool) == 0 {
+		fmt.Println("No transactions to mine!")
+		return false
+	}
+
 	nonce := bc.ProofOfWork()
 	bc.AddTransaction(MINING_SENDER, bc.address, MINING_REWARD, nil, nil)
 	bc.AddBlock(nonce, bc.GetLastBlock().Hash())
 	fmt.Println("Mined a new block successfully!")
+	return true
+}
+
+// StartMining() starts the mining process.
+func (bc *Blockchain) StartMining() {
+	bc.Mine()
+	time.AfterFunc(time.Second*MINING_TIME_SEC, bc.StartMining)
 }
 
 // GetBalance() returns the balance of a given address.
