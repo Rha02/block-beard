@@ -21,6 +21,8 @@ func IsFoundHost(host string, port uint16) bool {
 func FindNeighbors(currHost string, currPort uint16, startIP, endIP uint8, startPort, endPort uint16) []string {
 	currAddress := fmt.Sprintf("%s:%d", currHost, currPort)
 
+	println("Finding neighbors for", currAddress)
+
 	m := PATTERN.FindStringSubmatch(currHost)
 	if len(m) == 0 {
 		println("Invalid host name")
@@ -44,4 +46,19 @@ func FindNeighbors(currHost string, currPort uint16, startIP, endIP uint8, start
 	}
 
 	return neighbors
+}
+
+func GetHost() string {
+	return "127.0.0.1"
+	// host, err := os.Hostname()
+	// if err != nil {
+	// 	return "127.0.0.1"
+	// }
+
+	// address, err := net.LookupHost(host)
+	// if err != nil {
+	// 	return "127.0.0.1"
+	// }
+
+	// return address[0]
 }

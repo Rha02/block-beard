@@ -25,6 +25,7 @@ func (s *Server) Port() uint16 {
 }
 
 func (s *Server) Start() {
+	s.GetBlockchain().Run()
 	http.HandleFunc("/", s.GetChainHandler)
 	http.HandleFunc("/transactions", s.TransactionsHandler)
 	http.HandleFunc("/mine", s.MineHandler)
@@ -83,6 +84,44 @@ func (s *Server) TransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusCreated)
 		w.Write(utils.JsonStatus("Transaction successful"))
+		return
+	}
+
+	if r.Method == http.MethodPut {
+		decoder := json.NewDecoder(r.Body)
+		var t blockchain.TransactionRequest
+		err := decoder.Decode(&t)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Println("Error decoding transaction request:", err)
+			return
+		}
+		if !t.IsValid() {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Println("Invalid transaction request: missing fields")
+			return
+		}
+		publicKey := utils.PublicKeyFromString(*t.SenderPublicKey)
+		signature := utils.SignatureFromString(*t.Signature)
+		bc := s.GetBlockchain()
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if !bc.AddTransaction(*t.SenderAddress, *t.RecipientAddress, *t.Amount, publicKey, signature) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(utils.JsonStatus("Transaction failed"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(utils.JsonStatus("Transaction successful"))
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		bc := s.GetBlockchain()
+		bc.ClearTransactionsPool()
+		w.WriteHeader(http.StatusOK)
+		w.Write(utils.JsonStatus("Transactions pool cleared"))
 		return
 	}
 
