@@ -31,6 +31,7 @@ func (s *Server) Start() {
 	http.HandleFunc("/mine", s.MineHandler)
 	http.HandleFunc("/mine/start", s.StartMineHandler)
 	http.HandleFunc("/amount", s.AmountHandler)
+	http.HandleFunc("/consensus", s.ConsensusHandler)
 	http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }
 
@@ -190,4 +191,18 @@ func (s *Server) AmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(m)
+}
+
+func (s *Server) ConsensusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	bc := s.GetBlockchain()
+	bc.ResolveConflicts()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(utils.JsonStatus("Consensus resolved"))
 }

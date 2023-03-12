@@ -40,6 +40,7 @@ type Blockchain struct {
 
 func (bc *Blockchain) Run() {
 	bc.StartSyncNeighbors()
+	bc.ResolveConflicts()
 }
 
 // NewBlockchain() returns a pointer to a new blockchain
@@ -65,6 +66,20 @@ func (bc *Blockchain) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func (bc *Blockchain) UnmarshalJSON(data []byte) error {
+	tmp := &struct {
+		Chain *[]*Block `json:"chain"`
+	}{
+		Chain: &bc.chain,
+	}
+
+	if err := json.Unmarshal(data, tmp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (bc *Blockchain) SetNeighbors() {
 	bc.neighbors = utils.FindNeighbors(
 		utils.GetHost(), bc.port,
@@ -87,6 +102,10 @@ func (bc *Blockchain) StartSyncNeighbors() {
 			time.Sleep(BLOCKCHAIN_NEIGHBOR_SYNC_TIME_SEC * time.Second)
 		}
 	}()
+}
+
+func (bc *Blockchain) GetChain() []*Block {
+	return bc.chain
 }
 
 func (bc *Blockchain) GetTransactions() []*Transaction {
@@ -229,6 +248,15 @@ func (bc *Blockchain) Mine() bool {
 	bc.AddTransaction(MINING_SENDER, bc.address, MINING_REWARD, nil, nil)
 	bc.AddBlock(nonce, bc.GetLastBlock().Hash())
 	fmt.Println("Mined a new block successfully!")
+
+	for _, n := range bc.neighbors {
+		endpoint := fmt.Sprintf("http://%s/block", n)
+		req, _ := http.NewRequest("PUT", endpoint, nil)
+		req.Header.Set("Content-Type", "application/json")
+		res, _ := http.DefaultClient.Do(req)
+		fmt.Printf("%v\n", res)
+	}
+
 	return true
 }
 
@@ -264,4 +292,52 @@ func (bc *Blockchain) ToString() string {
 		}
 	}
 	return res
+}
+
+func (bc *Blockchain) IsValidChain(chain []*Block) bool {
+	if len(chain) == 0 {
+		return false
+	}
+
+	prevBlock := chain[0]
+	idx := 1
+
+	for idx < len(chain) {
+		block := chain[idx]
+		if block.prevHash != prevBlock.Hash() || !bc.ValidateProof(block.nonce, block.prevHash, block.transactions, MiningDifficulty) {
+			return false
+		}
+		prevBlock = block
+		idx++
+	}
+	return true
+}
+
+func (bc *Blockchain) ResolveConflicts() bool {
+	var longestChain []*Block
+	maxLength := len(bc.chain)
+
+	for _, n := range bc.neighbors {
+		endpoint := fmt.Sprintf("http://%s/chain", n)
+		res, _ := http.Get(endpoint)
+		defer res.Body.Close()
+		if res.StatusCode == http.StatusOK {
+			var bcRes Blockchain
+			decoder := json.NewDecoder(res.Body)
+			_ = decoder.Decode(&bcRes)
+
+			chain := bcRes.GetChain()
+
+			if len(chain) > maxLength && bc.IsValidChain(chain) {
+				maxLength = len(chain)
+				longestChain = chain
+			}
+		}
+	}
+
+	if longestChain != nil {
+		bc.chain = longestChain
+		return true
+	}
+	return false
 }

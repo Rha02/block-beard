@@ -42,6 +42,24 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func (t *Transaction) UnmarshalJSON(data []byte) error {
+	tmp := &struct {
+		SenderAddress    *string  `json:"sender_address"`
+		RecipientAddress *string  `json:"recipient_address"`
+		Amount           *float32 `json:"amount"`
+	}{
+		SenderAddress:    &t.senderAddress,
+		RecipientAddress: &t.recipientAddress,
+		Amount:           &t.amount,
+	}
+
+	if err := json.Unmarshal(data, tmp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type TransactionRequest struct {
 	SenderAddress    *string  `json:"sender_address"`
 	RecipientAddress *string  `json:"recipient_address"`
